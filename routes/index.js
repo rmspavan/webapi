@@ -1096,7 +1096,7 @@ router.post("/publisher/add", async function (req, res) {
 
   if (!!token_id) {
     var insert =
-      "INSERT INTO publisher(id,crowns,password,role,session_type,started_at,status,title,token_id,user_name,session_data,session_id,tokenUrl) Values (?,?,?,?,?,?,?,?,?,?,?,?,?);";
+      "INSERT INTO publisher(id,crowns,password,role,session_type,started_at,status,title,token_id,user_name,session_data,session_id,token_url) Values (?,?,?,?,?,?,?,?,?,?,?,?,?);";
     var params = [id, crowns, password, role, session_type, started_at, status, title, token_id, user_name,session_data,session_id,tokenUrl];
     console.log(params);
     var postResponse = db
