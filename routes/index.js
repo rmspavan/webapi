@@ -944,7 +944,7 @@ router.get("/user", async function (req, res, next) {
 /* GET user by id */
 router.get("/user/:id", async function (req, res, next) {
   var id = req.params.id;
-  var query = "SELECT * FROM user WHERE uid=?;";
+  var query = "SELECT * FROM user WHERE id=? ALLOW FILTERING;";
   var params = [id];
   var data = await db.post(query, params);
   res.json(data["rows"]);
@@ -983,7 +983,7 @@ router.post("/user/validate", async function (req, res) {
   if (response.length === 0) {
     var insert =
       "INSERT INTO user(id,name,phone,email,address,country,created_date) Values (?,?,?,?,?,?,?);";
-    var params = [id, name, phone, email, address, country, created_date];
+    var params = [uid, name, phone, email, address, country, created_date];
     console.log(params);
     var postResponse = db
       .post(insert, params)
