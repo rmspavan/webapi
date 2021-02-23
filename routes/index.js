@@ -1027,13 +1027,12 @@ router.put("/user/update/:id", async function (req, res) {
 
   var data = {
     error: 1,
-    crowns: "",
   };
 
   if (!!modified_date) {
     var insert =
-      "UPDATE user SET name=?,phone=?,email=?,address=?,country=?,modified_date=? WHERE id=?;";
-    var params = [name, phone, email, address, country, modified_date, uid];
+      "UPDATE user SET name=?,address=?,country=?,modified_date=? WHERE phone=? AND email=?;";
+    var params = [name, address, country, modified_date, phone, email];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1346,6 +1345,91 @@ router.put("/agent/:id", async function (req, res) {
     res.json(data);
   } else {
     data["agent"] = "Please provide all required data";
+    res.json(data);
+  }
+});
+
+
+/* get user icon by id */
+router.get("/user_icon/:id", async function (req, res, next) {
+  var id = req.params.id;
+  var query = "SELECT * FROM user_icon WHERE id=?;";
+  var params = [id];
+  var data = await db.post(query, params);
+  res.json(data["rows"]);
+});
+
+/* Create an user icon */
+router.post("/user_icon/add", async function (req, res) {
+  var image = req.body.image;
+  var id = req.body.id;
+  var status = req.body.status;
+  var created_date = new Date();
+
+  var data = {
+    error: 1,
+  };
+
+  if (!!created_date) {
+    var insert =
+      "INSERT INTO user_icon(id,image, status, created_date) Values (?,?,?,?);";
+    var params = [id,image,status,created_date];
+    console.log(params);
+    var postResponse = db
+      .post(insert, params)
+      .then(function () {
+        console.log("Promise Resolved");
+      })
+      .catch(function (err) {
+        console.log(err);
+        console.log("Promise Rejected");
+      });
+    console.log(postResponse);
+    if (postResponse) {
+      data["error"] = 0;
+      data["icon"] = "Icon added Successfully";
+    }
+    res.json({id: id});
+  } else {
+    data["icon"] = "Please provide all required data";
+    res.json(data);
+  }
+});
+
+/* update an agent */
+router.put("/user_icon/:id", async function (req, res) {
+  var id = req.params.id;
+  var image = req.body.image;
+  var status = req.body.status;
+  var modified_at = new Date();
+  var status = 'ACTIVE';
+
+  var data = {
+    error: 1,
+  };
+
+  if (!!modified_at) {
+    var insert =
+      "UPDATE user_icon SET image=?,status=?,updated_date=? WHERE id=?;";
+    var params = [image,status,modified_at,id];
+    console.log(params);
+    var postResponse = db
+      .post(insert, params)
+      .then(function () {
+        console.log("Promise Resolved");
+      })
+      .catch(function (err) {
+        console.log(err);
+        console.log("Promise Rejected");
+      });
+    console.log(postResponse);
+    if (postResponse) {
+      data["error"] = 0;
+      data["icon"] = "icon updated Successfully";
+    }
+    res.json(data);
+  } else {
+    data["icon"] = "Please provide all required data";
     res.json(data);
   }
 });
