@@ -6,6 +6,8 @@ var date = require("../utilities/date");
 var stripe = require("stripe")(
   "sk_test_51HlsuKBGhy6l8fry2VRnt2s609CMbpNQpmEBlek6pBxBfXt7uu2OnTapjyGJGUDYVmwiZI2JVRmGdAKzLKf4vTdi00CBKROdXd"
 );
+const createError = require("http-errors");
+const {strict: assert} = require('assert');
 
 /* GET home page. */
 router.get("/users", async function (req, res, next) {
@@ -817,7 +819,7 @@ router.put("/crowns/update/:id", async function (req, res) {
  */
 
 router.post("/api/doPayment", async (req, res) => {
-  console.log("payment request", { req: req.body });
+  console.log("payment request", {req: req.body});
   const uid = req.body.uid;
   const newCrowns = req.body.crowns;
   //res.json({ success: "madhu" });
@@ -853,7 +855,7 @@ router.post("/api/doPayment", async (req, res) => {
       console.log(res[0].crowns);
       if (data.rowLength === 1) {
         const updatedCrowns = `${parseInt(res[0].crowns) + parseInt(newCrowns)
-          }`;
+        }`;
         const modified_date = new Date();
         console.log(
           "🚀 ~ file: index.js ~ line 849 ~ router.post ~ updatedCrowns",
@@ -864,7 +866,7 @@ router.post("/api/doPayment", async (req, res) => {
         const params = [updatedCrowns, modified_date, uid];
         const postResponse = await db.post(insert, params);
 
-        console.log({ postResponse });
+        console.log({postResponse});
         if (postResponse) {
           var query_success =
             "INSERT INTO transactions(id,amount,payment_token,type,description,crowns,payment_date_time,status) Values (?,?,?,?,?,?,?,?);";
@@ -878,7 +880,7 @@ router.post("/api/doPayment", async (req, res) => {
         // res.json(data);
       }
     }
-    res.json({ success: true });
+    res.json({success: true});
   } catch (error) {
     paymentDetails.status = "failed";
     const payment_date = new Date();
@@ -887,7 +889,7 @@ router.post("/api/doPayment", async (req, res) => {
     var values = [uid, paymentDetails.amount, paymentDetails.tokenId, paymentDetails.type
       , paymentDetails.description, newCrowns, payment_date, paymentDetails.status];
     var payments = db.post(query_failure, values);
-    res.json({ success: false });
+    res.json({success: false});
   }
 
   // .then((charge) => {
@@ -952,7 +954,7 @@ router.get("/user/:id", async function (req, res, next) {
 
 /* Create user */
 router.post("/user/validate", async function (req, res) {
-  console.log({ req: req.body });
+  console.log({req: req.body});
   var name = req.body.name;
   var phone = req.body.phoneNumber || "";
   var email = req.body.email;
@@ -978,7 +980,7 @@ router.post("/user/validate", async function (req, res) {
     var data = await db.post(query, params);
     response = data["rows"];
   } else {
-    res.json({ error: "Phone or Email is mandatory!!!" });
+    res.json({error: "Phone or Email is mandatory!!!"});
   }
   if (response.length === 0) {
     var insert =
@@ -1009,9 +1011,9 @@ router.post("/user/validate", async function (req, res) {
         console.log(err);
         console.log("user creaetion failed");
       });
-    res.json({ id: uid });
+    res.json({id: uid});
   } else {
-    res.json({ id: response[0].id });
+    res.json({id: response[0].id});
   }
 });
 
@@ -1073,6 +1075,31 @@ router.get("/activeStreams", async function (req, res, next) {
   res.json(data["rows"]);
 });
 
+router.post("/session_tokens", async function (req, res) {
+  const {session_id, role} = req.body;
+  assert(session_id, createError(400, `"session_id" required`));
+  assert(["PUBLISHER", "SUBSCRIBER"].some((value) => value === role),
+    createError(400, `"role" should be ["PUBLISHER", "SUBSCRIBER"]`)
+  )
+
+  const session = await req.ov.createSession({
+    customSessionId: session_id
+  });
+
+  const connection = await session.createConnection({
+    role
+  });
+
+  res.json({
+    data: {
+      session_id,
+      token: connection.token,
+      role,
+    }
+  })
+
+})
+
 /* create streamer data */
 router.post("/publisher/add", async function (req, res) {
   var id = req.body.id;
@@ -1096,7 +1123,7 @@ router.post("/publisher/add", async function (req, res) {
   if (!!token_id) {
     var insert =
       "INSERT INTO publisher(id,crowns,password,role,session_type,started_at,status,title,token_id,user_name,session_data,session_id,token_url) Values (?,?,?,?,?,?,?,?,?,?,?,?,?);";
-    var params = [id, crowns, password, role, session_type, started_at, status, title, token_id, user_name,session_data,session_id,tokenUrl];
+    var params = [id, crowns, password, role, session_type, started_at, status, title, token_id, user_name, session_data, session_id, tokenUrl];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1167,7 +1194,6 @@ router.get("/subscribers/:id", async function (req, res, next) {
   var data = await db.post(query, params);
   res.json(data["rows"]);
 });
-
 
 router.post("/subscriber/add", async function (req, res) {
   var id = req.body.id;
@@ -1283,7 +1309,7 @@ router.post("/agent/add", async function (req, res) {
   if (!!created_date) {
     var insert =
       "INSERT INTO agent(id,name,ic_number,company_name,email,mobile,address,gender,created_at,status) Values (?,?,?,?,?,?,?,?,?,?);";
-    var params = [uid,name,ic_number,company_name,email,mobile,address,gender,created_date,status];
+    var params = [uid, name, ic_number, company_name, email, mobile, address, gender, created_date, status];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1326,7 +1352,7 @@ router.put("/agent/:id", async function (req, res) {
   if (!!modified_at) {
     var insert =
       "UPDATE agent SET name=?,ic_number=?,company_name=?,email=?,mobile=?,address=?,gender=?,modified_at=?,status=? WHERE id=?;";
-    var params = [name,ic_number,company_name,email,mobile,address,gender,modified_at,status,id];
+    var params = [name, ic_number, company_name, email, mobile, address, gender, modified_at, status, id];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1433,8 +1459,6 @@ router.put("/user_icon/:id", async function (req, res) {
     res.json(data);
   }
 });
-
-
 
 
 module.exports = router;
