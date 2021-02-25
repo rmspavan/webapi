@@ -258,7 +258,8 @@ app.use(favicon(path.join(__dirname, 'public', 'ficon.ico')));
 
 function openVidu() {
   const ov = new OpenVidu(
-    process.env.OPENVIDU_URL ?? 'https://demos.openvidu.io',
+    // process.env.OPENVIDU_URL ?? 'https://demos.openvidu.io',
+    process.env.OPENVIDU_URL ?? 'https://node.ratulive.com',
     process.env.OPENVIDU_SECRET ?? 'MY_SECRET',
   )
 
