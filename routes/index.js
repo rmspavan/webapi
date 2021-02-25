@@ -7,7 +7,7 @@ var stripe = require("stripe")(
   "sk_test_51HlsuKBGhy6l8fry2VRnt2s609CMbpNQpmEBlek6pBxBfXt7uu2OnTapjyGJGUDYVmwiZI2JVRmGdAKzLKf4vTdi00CBKROdXd"
 );
 const createError = require("http-errors");
-const {strict: assert} = require('assert');
+const { strict: assert } = require('assert');
 
 /* GET home page. */
 router.get("/users", async function (req, res, next) {
@@ -819,7 +819,7 @@ router.put("/crowns/update/:id", async function (req, res) {
  */
 
 router.post("/api/doPayment", async (req, res) => {
-  console.log("payment request", {req: req.body});
+  console.log("payment request", { req: req.body });
   const uid = req.body.uid;
   const newCrowns = req.body.crowns;
   //res.json({ success: "madhu" });
@@ -855,7 +855,7 @@ router.post("/api/doPayment", async (req, res) => {
       console.log(res[0].crowns);
       if (data.rowLength === 1) {
         const updatedCrowns = `${parseInt(res[0].crowns) + parseInt(newCrowns)
-        }`;
+          }`;
         const modified_date = new Date();
         console.log(
           "🚀 ~ file: index.js ~ line 849 ~ router.post ~ updatedCrowns",
@@ -866,7 +866,7 @@ router.post("/api/doPayment", async (req, res) => {
         const params = [updatedCrowns, modified_date, uid];
         const postResponse = await db.post(insert, params);
 
-        console.log({postResponse});
+        console.log({ postResponse });
         if (postResponse) {
           var query_success =
             "INSERT INTO transactions(id,amount,payment_token,type,description,crowns,payment_date_time,status) Values (?,?,?,?,?,?,?,?);";
@@ -880,7 +880,7 @@ router.post("/api/doPayment", async (req, res) => {
         // res.json(data);
       }
     }
-    res.json({success: true});
+    res.json({ success: true });
   } catch (error) {
     paymentDetails.status = "failed";
     const payment_date = new Date();
@@ -889,7 +889,7 @@ router.post("/api/doPayment", async (req, res) => {
     var values = [uid, paymentDetails.amount, paymentDetails.tokenId, paymentDetails.type
       , paymentDetails.description, newCrowns, payment_date, paymentDetails.status];
     var payments = db.post(query_failure, values);
-    res.json({success: false});
+    res.json({ success: false });
   }
 
   // .then((charge) => {
@@ -954,7 +954,7 @@ router.get("/user/:id", async function (req, res, next) {
 
 /* Create user */
 router.post("/user/validate", async function (req, res) {
-  console.log({req: req.body});
+  console.log({ req: req.body });
   var name = req.body.name;
   var phone = req.body.phoneNumber || "";
   var email = req.body.email;
@@ -980,7 +980,7 @@ router.post("/user/validate", async function (req, res) {
     var data = await db.post(query, params);
     response = data["rows"];
   } else {
-    res.json({error: "Phone or Email is mandatory!!!"});
+    res.json({ error: "Phone or Email is mandatory!!!" });
   }
   if (response.length === 0) {
     var insert =
@@ -1011,9 +1011,9 @@ router.post("/user/validate", async function (req, res) {
         console.log(err);
         console.log("user creaetion failed");
       });
-    res.json({id: uid});
+    res.json({ id: uid });
   } else {
-    res.json({id: response[0].id});
+    res.json({ id: response[0].id });
   }
 });
 
@@ -1076,7 +1076,7 @@ router.get("/activeStreams", async function (req, res, next) {
 });
 
 router.post("/session_tokens", async function (req, res) {
-  const {session_id, role} = req.body;
+  const { session_id, role } = req.body;
   assert(session_id, createError(400, `"session_id" required`));
   assert(["PUBLISHER", "SUBSCRIBER"].some((value) => value === role),
     createError(400, `"role" should be ["PUBLISHER", "SUBSCRIBER"]`)
@@ -1325,7 +1325,7 @@ router.post("/agent/add", async function (req, res) {
       data["error"] = 0;
       data["agent"] = "agent added Successfully";
     }
-    res.json({id: uid});
+    res.json({ id: uid });
   } else {
     data["agent"] = "Please provide all required data";
     res.json(data);
@@ -1399,7 +1399,7 @@ router.post("/user_icon/add", async function (req, res) {
   if (!!created_date) {
     var insert =
       "INSERT INTO user_icon(id,image, status, created_date) Values (?,?,?,?);";
-    var params = [id,image,status,created_date];
+    var params = [id, image, status, created_date];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1415,7 +1415,7 @@ router.post("/user_icon/add", async function (req, res) {
       data["error"] = 0;
       data["icon"] = "Icon added Successfully";
     }
-    res.json({id: id});
+    res.json({ id: id });
   } else {
     data["icon"] = "Please provide all required data";
     res.json(data);
@@ -1437,7 +1437,7 @@ router.put("/user_icon/:id", async function (req, res) {
   if (!!modified_at) {
     var insert =
       "UPDATE user_icon SET image=?,status=?,updated_date=? WHERE id=?;";
-    var params = [image,status,modified_at,id];
+    var params = [image, status, modified_at, id];
     console.log(params);
     var postResponse = db
       .post(insert, params)
@@ -1459,6 +1459,90 @@ router.put("/user_icon/:id", async function (req, res) {
     res.json(data);
   }
 });
+
+
+router.post("/user_gifted/:id", async function (req, res) {
+  var id = req.params.id;
+  var stream_tokenid = req.body.stream_tokenid;
+  var crowns = req.body.crowns;
+  var query = "SELECT * FROM user_gifts WHERE user_id=? AND stream_token_id=?;";
+  var params = [id, stream_tokenid];
+  var db_records = await db.post(query, params);
+  var records = db_records["rows"];
+
+  var data = {
+    error: 1,
+  };
+
+  if (records.length === 1) {
+    var totalCrowns = `${parseInt(records[0].crowns) + parseInt(crowns)}`;
+    if (totalCrowns) {
+      var insert =
+        "UPDATE user_gifts SET crowns=? WHERE user_id=? and stream_token_id = ?;";
+      var params = [totalCrowns, id, stream_tokenid];
+      console.log(params);
+      var postResponse = db
+        .post(insert, params)
+        .then(function () {
+          console.log("Promise Resolved");
+        })
+        .catch(function (err) {
+          console.log(err);
+          console.log("Promise Rejected");
+        });
+      console.log(postResponse);
+      if (postResponse) {
+        data["error"] = 0;
+        data["gifts"] = "gifted crowns updated Successfully";
+      }
+      res.json(data);
+    } else {
+      data["gifts"] = "Please provide all required data";
+      res.json(data);
+    }
+  } else {
+    if (!!id) {
+      var insert =
+        "INSERT INTO user_gifts(user_id,stream_token_id, crowns) Values (?,?,?);";
+      var params = [id, stream_tokenid, crowns];
+      console.log(params);
+      var postResponse = db
+        .post(insert, params)
+        .then(function () {
+          console.log("Promise Resolved");
+        })
+        .catch(function (err) {
+          console.log(err);
+          console.log("Promise Rejected");
+        });
+      console.log(postResponse);
+      if (postResponse) {
+        data["error"] = 0;
+        data["gifted"] = "gifted crowns added to streamer Successfully";
+      }
+      res.json({ id: id });
+    } else {
+      data["gifted"] = "Please provide all required data";
+      res.json(data);
+    }
+  }
+});
+
+router.get("/earned_crowns_active/:id", async function (req, res, next) {
+  var id = req.params.id;
+  var query = "SELECT crowns FROM user_gifts WHERE stream_token_id=? ALLOW FILTERING;";
+  var params = [id];
+  var data = await db.post(query, params);
+  var crowns = data["rows"];
+  if (crowns.length > 1) {
+
+    var totalCrowns = crowns.reduce((accumulator, current) => accumulator + parseInt(current.crowns), 0);
+    res.json({"totalCrowns": totalCrowns});
+  } else {
+    res.json({"error": "No one gifted yet !!!"});
+  }
+});
+
 
 
 module.exports = router;
