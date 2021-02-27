@@ -131,7 +131,8 @@ router.put("/bonus/update/:id", async function (req, res) {
 
 /* GET gifts */
 router.get("/gifts", async function (req, res, next) {
-  var query = "SELECT * FROM gifts;";
+  // var query = "SELECT name,value,status,icon,gif_img,created_date,added_by,type,conversion_rate,remarks,modified_date FROM gifts;";
+  var query = "SELECT * FROM gifts;"
   var data = await db.query(query);
   res.json(data["rows"]);
 });
@@ -1149,6 +1150,7 @@ router.post("/publisher/add", async function (req, res) {
 /* End stream */
 router.put("/publisher/endStream/:id", async function (req, res) {
   var token_id = req.params.id;
+  var uid = req.body.uid;
   var earned_crowns = req.body.earned_crowns;
   var ended_at = new Date();
   var status = "INACTIVE"
@@ -1173,6 +1175,25 @@ router.put("/publisher/endStream/:id", async function (req, res) {
       });
     console.log(postResponse);
     if (postResponse) {
+      var query = "SELECT earned_pearls FROM earned_pearls WHERE id=?;";
+      var params = [uid];
+      var pearlsData = await db.post(query, params);
+      var pearls = pearlsData["rows"];
+      if (pearls.length === 1 && uid) {
+        var existingPearls = pearls[0].earned_pearls;
+        var total_pearls = `${parseInt(existingPearls) + parseInt(earned_crowns)}`;
+        var pearlsUpdate = "Update earned_pearls SET earned_pearls=?,updated_at=? WHERE id=?;";
+        var pearlsParams = [total_pearls, ended_at, uid];
+        db.post(pearlsUpdate, pearlsParams);
+      } else if (uid){
+        var pearlsInsert = "INSERT INTO earned_pearls(id,earned_pearls,updated_at) Values(?,?,?);";
+        var pearlsParams = [uid, earned_crowns, ended_at];
+        db.post(pearlsInsert, pearlsParams);
+      }
+      // var giftSelect = "SELECT user_id,crowns FROM user_gifts WHERE stream_token_id=? ALLOW FILTERING;"
+      // var deleteGiftData = "DELETE FROM user_gifts WHERE stream_token_id=?";
+      // var deleteGiftParams = [token_id];
+      // db.post(deleteGiftData, deleteGiftParams);
       data["error"] = 0;
       data["publisher"] = "stream ended Successfully";
     }
@@ -1530,32 +1551,45 @@ router.post("/user_gifted/:id", async function (req, res) {
 
 router.get("/earned_crowns_active/:id", async function (req, res, next) {
   var id = req.params.id;
+  earned_pearls = await getActiveStreamCrowns(id);
+  res.json({ "totalCrowns": earned_pearls });
+});
+
+async function getActiveStreamCrowns(id) {
   var query = "SELECT crowns FROM user_gifts WHERE stream_token_id=? ALLOW FILTERING;";
   var params = [id];
   var data = await db.post(query, params);
   var crowns = data["rows"];
+  var pearls = 0;
   if (crowns.length > 1) {
     var totalCrowns = crowns.reduce((accumulator, current) => accumulator + parseInt(current.crowns), 0);
-    res.json({"totalCrowns": totalCrowns});
-  } else {
-    res.json({"totalCrowns": "0"});
+    var query = "SELECT crown_type,conversion_rate FROM crown_to_pearl";
+    var params = [id];
+    var conversionMaster = await db.post(query, params);
+    var conversionMaster = conversionMaster["rows"];
+    conversionMaster.sort((a, b) => (parseInt(a.crown_type) > parseInt(b.crown_type)) ? 1 :
+      ((parseInt(b.crown_type) > parseInt(a.crown_type)) ? -1 : 0));
+    for (let i = 0; i < conversionMaster.length; i++) {
+      if (!(conversionMaster[i].crown_type <= totalCrowns) || i+1 === conversionMaster.length) {
+        pearls = totalCrowns * conversionMaster[i].conversion_rate;
+        break;
+      }
+    };
   }
-});
+  return pearls;
+}
 
 router.get("/earned_pearls/:id", async function (req, res, next) {
   var id = req.params.id;
-  var query = "SELECT earned_crowns FROM earned_crowns WHERE uid=?;";
+  var query = "SELECT earned_pearls FROM earned_pearls WHERE id=?;";
   var params = [id];
   var data = await db.post(query, params);
-  var crowns = data["rows"];
-  if (crowns.length > 1) {
-    var totalCrowns = crowns.reduce((accumulator, current) => accumulator + parseInt(current.crowns), 0);
-    if(totalCrowns){
-      // add crown to pearl conversion logic
-    }
-    res.json({"totalCrowns": totalCrowns});
+  var pearls = data["rows"];
+  if (pearls.length === 1) {
+    var totalPearls = pearls[0].earned_pearls;
+    res.json({ "userPearls": totalPearls });
   } else {
-    res.json({"error": "No one gifted yet !!!"});
+    res.json({ "userPearls": "0" });
   }
 });
 
