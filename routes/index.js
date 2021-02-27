@@ -1535,8 +1535,24 @@ router.get("/earned_crowns_active/:id", async function (req, res, next) {
   var data = await db.post(query, params);
   var crowns = data["rows"];
   if (crowns.length > 1) {
-
     var totalCrowns = crowns.reduce((accumulator, current) => accumulator + parseInt(current.crowns), 0);
+    res.json({"totalCrowns": totalCrowns});
+  } else {
+    res.json({"totalCrowns": "0"});
+  }
+});
+
+router.get("/earned_pearls/:id", async function (req, res, next) {
+  var id = req.params.id;
+  var query = "SELECT earned_crowns FROM earned_crowns WHERE uid=?;";
+  var params = [id];
+  var data = await db.post(query, params);
+  var crowns = data["rows"];
+  if (crowns.length > 1) {
+    var totalCrowns = crowns.reduce((accumulator, current) => accumulator + parseInt(current.crowns), 0);
+    if(totalCrowns){
+      // add crown to pearl conversion logic
+    }
     res.json({"totalCrowns": totalCrowns});
   } else {
     res.json({"error": "No one gifted yet !!!"});
